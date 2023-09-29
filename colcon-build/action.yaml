@@ -67,15 +67,20 @@ runs:
         colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml || true
         colcon mixin update default
       shell: bash
-
-    - name: Build
+      
+    - name: Build 
       run: |
-        . /opt/ros/${{ inputs.rosdistro }}/setup.sh
+        . /opt/ros/${{ inputs.rosdistro }}/local_setup.sh
         # Cannot use unshare inside a Docker container, so we just disable
         # DNS lookups instead.
         cat /etc/nsswitch.conf
         sed -e 's#hosts:\(.*\)dns\(.*\)#hosts:\1\2#g' -i.bak /etc/nsswitch.conf
         cat /etc/nsswitch.conf
+        colcon build --event-handlers console_cohesion+ \
+          --packages-skip ${{ inputs.target-packages }} \
+          --cmake-args -DCMAKE_BUILD_TYPE=${{ inputs.cmake-build-type }} \
+          --mixin coverage-gcc coverage-pytest compile-commands
+        bash install/local_setup.sh
         colcon build --event-handlers console_cohesion+ \
           --packages-above-and-dependencies ${{ inputs.target-packages }} \
           --cmake-args -DCMAKE_BUILD_TYPE=${{ inputs.cmake-build-type }} \
